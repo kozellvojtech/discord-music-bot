@@ -110,3 +110,56 @@ export function repeatLabel(mode: Player["repeatMode"]): string {
       return "Vypnuto";
   }
 }
+
+/** Embed se seznamem skladeb ve frontě (stránkovaný po 10 skladbách). */
+export function queueEmbed(player: Player, requestedPage = 1): EmbedBuilder {
+  const perPage = 10;
+  const tracks = player.queue.tracks;
+  const current = player.queue.current;
+  const totalPages = Math.max(1, Math.ceil(tracks.length / perPage));
+  const page = Math.min(Math.max(1, requestedPage), totalPages);
+  const start = (page - 1) * perPage;
+  const slice = tracks.slice(start, start + perPage);
+
+  const lines: string[] = [];
+  if (current) {
+    const req = requesterOf(current);
+    const dur = formatDuration(current.info.duration, current.info.isStream);
+    const who = req ? ` • ${escapeMarkdown(req.username)}` : "";
+    lines.push(`**Právě hraje:**\n🎶 **${trackLink(current)}** \`[${dur}]\`${who}\n`);
+  }
+
+  if (slice.length === 0) {
+    lines.push("*Ve frontě nejsou žádné další skladby.*");
+  } else {
+    lines.push("**Další ve frontě:**");
+    for (let i = 0; i < slice.length; i++) {
+      const track = slice[i];
+      if (!track) continue;
+      const req = requesterOf(track);
+      const dur = formatDuration(track.info.duration, track.info.isStream);
+      const who = req ? ` • ${escapeMarkdown(req.username)}` : "";
+      lines.push(`\`${start + i + 1}.\` ${trackLink(track)} \`[${dur}]\`${who}`);
+    }
+  }
+
+  const queueDuration = tracks.reduce((sum, t) => sum + (t.info.isStream ? 0 : (t.info.duration ?? 0)), 0);
+  const currentRemaining =
+    current && !current.info.isStream ? Math.max(0, (current.info.duration ?? 0) - player.position) : 0;
+  const totalDuration = queueDuration + currentRemaining;
+
+  const embed = new EmbedBuilder()
+    .setColor(COLORS.primary)
+    .setAuthor({ name: "📜 Fronta přehrávání" })
+    .setDescription(lines.join("\n"))
+    .addFields(
+      { name: "Ve frontě", value: `${tracks.length} skladeb`, inline: true },
+      { name: "Celková délka", value: formatDuration(totalDuration), inline: true },
+      { name: "Opakování", value: repeatLabel(player.repeatMode), inline: true },
+    )
+    .setFooter({ text: `Strana ${page} / ${totalPages}` });
+
+  if (current?.info.artworkUrl) embed.setThumbnail(current.info.artworkUrl);
+  return embed;
+}
+
