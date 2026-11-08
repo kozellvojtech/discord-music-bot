@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+.gitattributes
+.agents
+.argon-review.patch
+node_modules
+dist
+lavalink
+*.md
+docker-compose.yml
+Dockerfile
+.dockerignore

@@ -1,0 +1,97 @@
+# Spuštění:  docker compose up -d --build
+# Logy:      docker compose logs -f
+# Zastavení: docker compose down
+#
+# Bezpečnost: Lavalink ani yt-cipher NEMAJÍ "ports:" -> nejsou dostupné z tvého PC ani z internetu,
+# komunikují jen s botem uvnitř sítě "music". Každá služba dostane jen proměnné, které potřebuje.
+
+name: discord-music-bot
+
+services:
+  bot:
+    build: .
+    image: discord-music-bot:latest
+    restart: unless-stopped
+    environment:
+      DISCORD_TOKEN: ${DISCORD_TOKEN:?Doplň DISCORD_TOKEN do .env}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:?Doplň DISCORD_CLIENT_ID do .env}
+      DISCORD_GUILD_ID: ${DISCORD_GUILD_ID:?Doplň DISCORD_GUILD_ID do .env}
+      LAVALINK_HOST: lavalink
+      LAVALINK_PORT: "2333"
+      LAVALINK_PASSWORD: ${LAVALINK_PASSWORD:?Doplň LAVALINK_PASSWORD do .env}
+      DEFAULT_VOLUME: ${DEFAULT_VOLUME:-80}
+      IDLE_TIMEOUT_SECONDS: ${IDLE_TIMEOUT_SECONDS:-180}
+      EMPTY_CHANNEL_TIMEOUT_SECONDS: ${EMPTY_CHANNEL_TIMEOUT_SECONDS:-60}
+      MAX_QUEUE_SIZE: ${MAX_QUEUE_SIZE:-500}
+    depends_on:
+      lavalink:
+        condition: service_healthy
+    networks:
+      - music
+    stop_grace_period: 15s
+
+  lavalink:
+    # Výchozí varianta (Ubuntu). NE "alpine" - DAVE šifrování potřebuje glibc >= 2.35.
+    image: ghcr.io/lavalink-devs/lavalink:${LAVALINK_VERSION:-4.2.2}
+    restart: unless-stopped
+    environment:
+      LAVALINK_PASSWORD: ${LAVALINK_PASSWORD:?Doplň LAVALINK_PASSWORD do .env}
+      YT_PLUGIN_VERSION: ${YT_PLUGIN_VERSION:?Doplň YT_PLUGIN_VERSION do .env}
+      YT_PLUGIN_SNAPSHOT: ${YT_PLUGIN_SNAPSHOT:-true}
+      LAVASRC_VERSION: ${LAVASRC_VERSION:-4.8.3}
+      YT_CIPHER_TOKEN: ${YT_CIPHER_TOKEN:?Doplň YT_CIPHER_TOKEN do .env}
+      YT_OAUTH_ENABLED: ${YT_OAUTH_ENABLED:-false}
+      YT_OAUTH_REFRESH_TOKEN: ${YT_OAUTH_REFRESH_TOKEN:-}
+      SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:?Doplň SPOTIFY_CLIENT_ID do .env}
+      SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:?Doplň SPOTIFY_CLIENT_SECRET do .env}
+      SPOTIFY_SP_DC: ${SPOTIFY_SP_DC:-}
+      SPOTIFY_PREFER_PARTNER_API: ${SPOTIFY_PREFER_PARTNER_API:-false}
+      SPOTIFY_COUNTRY: ${SPOTIFY_COUNTRY:-CZ}
+      JAVA_TOOL_OPTIONS: ${LAVALINK_JAVA_OPTIONS:--Xmx1G}
+    volumes:
+      - ./lavalink/application.yml:/opt/Lavalink/application.yml:ro
+      # Pojmenovaný svazek: pluginy se nestahují při každém restartu.
+      - lavalink-plugins:/opt/Lavalink/plugins
+    expose:
+      - "2333"
+    depends_on:
+      lavalink-init:
+        condition: service_completed_successfully
+      yt-cipher:
+        condition: service_started
+    healthcheck:
+      # Image nemusí mít curl -> kontrola, že port 2333 přijímá spojení (bash /dev/tcp).
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/2333' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 90s
+    networks:
+      - music
+
+  lavalink-init:
+    # Jednorázově nastaví vlastníka svazku s pluginy na uživatele Lavalinku (UID 322), pak skončí.
+    image: busybox:1.37
+    command: ["sh", "-c", "chown -R 322:322 /plugins"]
+    volumes:
+      - lavalink-plugins:/plugins
+    restart: "no"
+
+  yt-cipher:
+    # Vzdálený server pro dešifrování podpisů YouTube (doporučený autory youtube-pluginu).
+    image: ghcr.io/kikkia/yt-cipher:${YT_CIPHER_TAG:-master}
+    restart: unless-stopped
+    environment:
+      API_TOKEN: ${YT_CIPHER_TOKEN:?Doplň YT_CIPHER_TOKEN do .env}
+      OVERRIDE_PLAYER_VARIANT: IAS
+    expose:
+      - "8001"
+    networks:
+      - music
+
+networks:
+  music:
+    driver: bridge
+
+volumes:
+  lavalink-plugins:

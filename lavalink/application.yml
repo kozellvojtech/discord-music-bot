@@ -1,0 +1,147 @@
+# Konfigurace Lavalinku (audio server).
+# Hodnoty ve tvaru ${NAZEV:vychozi} se doplní z proměnných prostředí, které sem posílá docker-compose.yml z .env.
+# Tento soubor normálně NEMUSÍŠ upravovat - vše důležité se mění v .env.
+
+server:
+  port: 2333
+  address: 0.0.0.0
+  http2:
+    enabled: false
+
+lavalink:
+  plugins:
+    # YouTube + YouTube Music. Verzi měníš v .env (YT_PLUGIN_VERSION + YT_PLUGIN_SNAPSHOT).
+    - dependency: "dev.lavalink.youtube:youtube-plugin:${YT_PLUGIN_VERSION}"
+      snapshot: ${YT_PLUGIN_SNAPSHOT:true}
+    # Spotify (odkazy se převádí na přehrávání z YouTube).
+    - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:${LAVASRC_VERSION:4.8.3}"
+      snapshot: false
+  pluginsDir: "./plugins"
+  server:
+    password: "${LAVALINK_PASSWORD}"
+    sources:
+      # Vestavěný YouTube zdroj je zastaralý - YouTube obstarává youtube-plugin.
+      youtube: false
+      bandcamp: true
+      soundcloud: true
+      twitch: true
+      vimeo: true
+      nico: false
+      http: false   # přímé HTTP odkazy na soubory vypnuté (bezpečnost)
+      local: false
+    filters:
+      volume: true
+      equalizer: true
+      karaoke: false
+      timescale: false
+      tremolo: false
+      vibrato: false
+      distortion: false
+      rotation: false
+      channelMix: false
+      lowPass: false
+    nonAllocatingFrameBuffer: false
+    bufferDurationMs: 400
+    frameBufferDurationMs: 5000
+    opusEncodingQuality: 10
+    resamplingQuality: HIGH
+    trackStuckThresholdMs: 10000
+    useSeekGhosting: true
+    youtubePlaylistLoadLimit: 6
+    playerUpdateInterval: 5
+    youtubeSearchEnabled: true
+    soundcloudSearchEnabled: true
+    gc-warnings: true
+
+plugins:
+  youtube:
+    enabled: true
+    allowSearch: true
+    allowDirectVideoIds: true
+    allowDirectPlaylistIds: true
+    # Pořadí klientů = pořadí, ve kterém se zkouší. MUSIC slouží jen k hledání (ytmsearch).
+    # TV funguje jen se zapnutým OAuth (YT_OAUTH_ENABLED=true).
+    clients:
+      - MUSIC
+      - ANDROID_VR
+      - WEB
+      - WEBEMBEDDED
+      - IOS
+      - TVHTML5_SIMPLY
+      - TV
+    clientOptions:
+      MUSIC:
+        playback: false
+      WEBEMBEDDED:
+        searching: false
+        playlistLoading: false
+      TV:
+        searching: false
+        playlistLoading: false
+    # Vzdálené dešifrování podpisů YouTube (kontejner yt-cipher ve stejné Docker síti).
+    remoteCipher:
+      url: "http://yt-cipher:8001/"
+      password: "${YT_CIPHER_TOKEN}"
+      userAgent: "private-discord-music-bot"
+    # Přihlášení vedlejším Google účtem (volitelné, viz README -> "YouTube OAuth").
+    oauth:
+      enabled: ${YT_OAUTH_ENABLED:false}
+      refreshToken: "${YT_OAUTH_REFRESH_TOKEN:}"
+      skipInitialization: false
+    # poToken (pokročilé, volitelné): odkomentuj a doplň hodnoty přímo sem, viz README.
+    # pot:
+    #   token: "..."
+    #   visitorData: "..."
+
+  lavasrc:
+    # Jak se Spotify skladba hledá na YouTube: nejdřív podle ISRC kódu (přesná shoda), pak podle názvu.
+    providers:
+      - "ytsearch:\"%ISRC%\""
+      - "ytmsearch:%QUERY%"
+      - "ytsearch:%QUERY%"
+    sources:
+      spotify: true
+      applemusic: false
+      deezer: false
+      yandexmusic: false
+      flowerytts: false
+      youtube: false
+      vkmusic: false
+      tidal: false
+      qobuz: false
+      ytdlp: false
+      jiosaavn: false
+    spotify:
+      clientId: "${SPOTIFY_CLIENT_ID}"
+      clientSecret: "${SPOTIFY_CLIENT_SECRET}"
+      # Nouzovka pro cizí playlisty (cookie sp_dc z webového přehrávače) - volitelné, viz README.
+      spDc: "${SPOTIFY_SP_DC:}"
+      preferPartnerApi: ${SPOTIFY_PREFER_PARTNER_API:false}
+      countryCode: "${SPOTIFY_COUNTRY:CZ}"
+      playlistLoadLimit: 6   # 6 x 100 skladeb
+      albumLoadLimit: 6      # 6 x 50 skladeb
+      resolveArtistsInSearch: true
+      localFiles: false
+
+metrics:
+  prometheus:
+    enabled: false
+    endpoint: /metrics
+
+sentry:
+  dsn: ""
+  environment: ""
+
+# Logy jdou jen na výstup kontejneru: docker compose logs -f lavalink
+logging:
+  level:
+    root: INFO
+    lavalink: INFO
+    dev.lavalink.youtube: INFO
+  request:
+    enabled: true
+    includeClientInfo: true
+    includeHeaders: false
+    includeQueryString: true
+    includePayload: false
+    maxPayloadLength: 10000
