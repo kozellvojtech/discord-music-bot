@@ -1,0 +1,25 @@
+{
+  "name": "discord-music-bot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Soukromý Discord hudební bot (discord.js + Lavalink)",
+  "type": "module",
+  "main": "dist/index.js",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "deploy-commands": "node dist/deploy-commands.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "discord.js": "^14.28.1",
+    "lavalink-client": "^2.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "typescript": "^5.9.3"
+  }
+}

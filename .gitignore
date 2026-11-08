@@ -1,0 +1,22 @@
+# Závislosti a build
+node_modules/
+dist/
+
+# Tajné údaje (NIKDY necommitovat)
+.env
+.env.*
+!.env.example
+
+# Lavalink - stažené pluginy a logy
+lavalink/plugins/
+lavalink/logs/
+
+# Týmová práce modelů
+.agents/tasks/
+.argon-review.patch
+
+# Systém / editor
+.DS_Store
+Thumbs.db
+.vscode/
+*.log

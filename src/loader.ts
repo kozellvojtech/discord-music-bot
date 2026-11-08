@@ -1,0 +1,44 @@
+import { readdir } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { REST, Routes } from "discord.js";
+import { config } from "./config.js";
+import type { BotEvent, Command } from "./types.js";
+
+const here = dirname(fileURLToPath(import.meta.url));
+
+async function importDefaults<T>(folder: string): Promise<T[]> {
+  const dir = join(here, folder);
+  let files: string[];
+  try {
+    files = await readdir(dir);
+  } catch {
+    console.warn(`[loader] Složka ${folder}/ neexistuje, přeskakuji.`);
+    return [];
+  }
+  const modules: T[] = [];
+  for (const file of files.sort()) {
+    if (!file.endsWith(".js")) continue;
+    const mod = (await import(pathToFileURL(join(dir, file)).href)) as { default?: T };
+    if (mod.default) modules.push(mod.default);
+    else console.warn(`[loader] ${folder}/${file} nemá default export, přeskakuji.`);
+  }
+  return modules;
+}
+
+export function loadCommands(): Promise<Command[]> {
+  return importDefaults<Command>("commands");
+}
+
+export function loadEvents(): Promise<BotEvent[]> {
+  return importDefaults<BotEvent>("events");
+}
+
+/** Zaregistruje slash příkazy jen pro testovací server (projeví se hned, globální registrace trvá až hodinu). */
+export async function registerGuildCommands(commands: Command[]): Promise<void> {
+  const rest = new REST().setToken(config.discord.token);
+  await rest.put(Routes.applicationGuildCommands(config.discord.clientId, config.discord.guildId), {
+    body: commands.map((c) => c.data),
+  });
+  console.log(`[loader] Zaregistrováno ${commands.length} příkazů pro server ${config.discord.guildId}.`);
+}
