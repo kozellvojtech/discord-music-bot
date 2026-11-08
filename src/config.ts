@@ -27,7 +27,15 @@ export const config = {
   discord: {
     token: required("DISCORD_TOKEN"),
     clientId: required("DISCORD_CLIENT_ID"),
-    guildId: required("DISCORD_GUILD_ID"),
+    /** Jeden nebo víc serverů oddělených čárkou: DISCORD_GUILD_ID=111,222 */
+    guildIds: [
+      ...new Set(
+        required("DISCORD_GUILD_ID")
+          .split(",")
+          .map((id) => id.trim())
+          .filter(Boolean),
+      ),
+    ],
   },
   lavalink: {
     host: process.env.LAVALINK_HOST?.trim() || "lavalink",

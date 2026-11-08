@@ -152,7 +152,7 @@ cp .env.example .env
 3. Doplň získané hodnoty:
    - `DISCORD_TOKEN`: token tvého bota.
    - `DISCORD_CLIENT_ID`: ID tvé aplikace z Discord portálu.
-   - `DISCORD_GUILD_ID`: ID tvého Discord serveru.
+   - `DISCORD_GUILD_ID`: ID tvého Discord serveru. Víc serverů odděl čárkou: `DISCORD_GUILD_ID=111...,222...` (bot musí být na každý z nich pozvaný odkazem z kapitoly 3).
    - `SPOTIFY_CLIENT_ID`: klientské ID ze Spotify dashboardu.
    - `SPOTIFY_CLIENT_SECRET`: klientský tajný klíč ze Spotify dashboardu.
    - Ostatní hodnoty můžeš ponechat ve výchozím nastavení, nebo upravit hesla `LAVALINK_PASSWORD` a `YT_CIPHER_TOKEN` na libovolné náhodné řetězce.
