@@ -1,7 +1,7 @@
 import { type Client, DiscordAPIError, RESTJSONErrorCodes, type SendableChannels } from "discord.js";
 import type { BotEvent } from "../types.js";
 import { errorEmbed, infoEmbed, nowPlayingEmbed } from "../utils/embeds.js";
-import { truncate } from "../utils/format.js";
+import { escapeMarkdown, truncate } from "../utils/format.js";
 
 /** Mapa guildId -> ID poslední "Právě hraje" zprávy. */
 const nowPlayingMessages = new Map<string, string>();
@@ -85,8 +85,8 @@ export default {
         const channel = await getSendableChannel(client, player.textChannelId);
         if (!channel) return;
 
-        const title = track?.info.title ?? "Neznámá skladba";
-        const reason = payload.exception?.message ? truncate(payload.exception.message, 200) : null;
+        const title = escapeMarkdown(track?.info.title ?? "Neznámá skladba");
+        const reason = payload.exception?.message ? escapeMarkdown(truncate(payload.exception.message, 200)) : null;
         const text = reason
           ? `Skladbu se nepodařilo přehrát: **${title}**\nDůvod: ${reason}`
           : `Skladbu se nepodařilo přehrát: **${title}**`;
@@ -107,7 +107,7 @@ export default {
         const channel = await getSendableChannel(client, player.textChannelId);
         if (!channel) return;
 
-        const title = track?.info.title ?? "Neznámá skladba";
+        const title = escapeMarkdown(track?.info.title ?? "Neznámá skladba");
         await channel
           .send({ embeds: [infoEmbed(`⚠️ Skladba **${title}** se zasekla a přeskakuje se.`)] })
           .catch((err: unknown) => {

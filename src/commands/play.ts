@@ -66,10 +66,6 @@ export default {
         volume: config.player.defaultVolume,
       });
 
-      if (!player.connected) {
-        await player.connect();
-      }
-
       const result = await player.search(
         isUrl ? { query } : { query, source: "ytmsearch" },
         interaction.user,
@@ -100,6 +96,16 @@ export default {
         return;
       }
 
+      // Do voice kanálu se připoj až ve chvíli, kdy je co hrát (jinak by bot zůstal viset v kanálu).
+      // Znovu se připojuj jen pokud tam bot opravdu není - opakovaný connect by rušil probíhající voice/DAVE handshake.
+      if (interaction.guild?.members.me?.voice.channelId !== voice.channel.id) {
+        await player.connect();
+      }
+
+      // "Nečinný" = žádná aktuální skladba. player.playing se nastaví až po TrackStart z Lavalinku,
+      // proto rozhoduje queue.current (jinak by rychlé druhé /play restartovalo první skladbu).
+      const wasIdle = !player.queue.current;
+
       if (result.loadType === "playlist") {
         const tracksToAdd = result.tracks.slice(0, remainingSpace);
         await player.queue.add(tracksToAdd);
@@ -109,7 +115,7 @@ export default {
           isUrl ? query : undefined,
           result.playlist?.thumbnail,
         );
-        if (!player.playing && !player.paused) {
+        if (wasIdle) {
           await player.play();
         }
         await interaction.editReply({ embeds: [embed] });
@@ -123,12 +129,11 @@ export default {
         return;
       }
 
-      const wasIdle = !player.playing && !player.paused && !player.queue.current;
       await player.queue.add(firstTrack);
       const position = wasIdle ? 0 : player.queue.tracks.length;
       const embed = trackAddedEmbed(firstTrack, position);
 
-      if (!player.playing && !player.paused) {
+      if (wasIdle) {
         await player.play();
       }
 

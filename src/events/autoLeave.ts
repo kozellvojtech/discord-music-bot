@@ -61,6 +61,20 @@ async function leaveEmptyChannel(client: Client, guildId: string): Promise<void>
   });
 }
 
+/** Spustí (nebo zruší) časovač odchodu podle toho, jestli je ve voice kanálu bota nějaký člověk. */
+function checkEmptyChannel(client: Client, guildId: string, voiceChannelId: string): void {
+  if (countHumansInVoice(client, guildId, voiceChannelId) > 0) {
+    clearEmptyChannelTimer(guildId);
+    return;
+  }
+  if (emptyChannelTimers.has(guildId)) return;
+
+  const timer = setTimeout(() => {
+    void leaveEmptyChannel(client, guildId);
+  }, config.player.emptyChannelTimeoutSeconds * 1_000);
+  emptyChannelTimers.set(guildId, timer);
+}
+
 export default {
   name: "autoLeave",
   register(client) {
@@ -94,6 +108,8 @@ export default {
 
     client.lavalink.on("trackStart", (player) => {
       clearIdleTimer(player.guildId);
+      // Pojistka: uživatel mohl odejít ještě před vytvořením přehrávače (během /play) -> VoiceStateUpdate už nepřijde.
+      if (player.voiceChannelId) checkEmptyChannel(client, player.guildId, player.voiceChannelId);
     });
 
     client.lavalink.on("playerDestroy", (player) => {
@@ -110,20 +126,7 @@ export default {
       const player = client.lavalink.getPlayer(guildId);
       if (!player || !player.voiceChannelId) return;
 
-      const humans = countHumansInVoice(client, guildId, player.voiceChannelId);
-      if (humans > 0) {
-        clearEmptyChannelTimer(guildId);
-        return;
-      }
-
-      if (emptyChannelTimers.has(guildId)) return;
-
-      const timeoutMs = config.player.emptyChannelTimeoutSeconds * 1_000;
-      const timer = setTimeout(() => {
-        void leaveEmptyChannel(client, guildId);
-      }, timeoutMs);
-
-      emptyChannelTimers.set(guildId, timer);
+      checkEmptyChannel(client, guildId, player.voiceChannelId);
     });
   },
 } satisfies BotEvent;

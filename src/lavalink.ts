@@ -38,6 +38,8 @@ export function createLavalink(client: Client): LavalinkManager {
         // Lavalink při prvním startu stahuje pluginy -> zkoušej se připojit déle.
         retryAmount: 30,
         retryDelay: 5_000,
+        // Výchozí true volá ws.close(500), což knihovna ws odmítne výjimkou a shodí proces.
+        closeOnError: false,
       },
     ],
     sendToShard: (guildId, payload) => {
@@ -68,7 +70,23 @@ export function createLavalink(client: Client): LavalinkManager {
     });
   });
 
-  manager.nodeManager.on("connect", (node) => console.log(`[lavalink] Uzel "${node.id}" připojen.`));
+  manager.nodeManager.on("connect", (node) => {
+    console.log(`[lavalink] Uzel "${node.id}" připojen.`);
+    // Když se /v4/info při připojení nepovede načíst, uzel by zůstal "připojený" bez info a hledání by selhávalo.
+    if (!node.info) {
+      void (async () => {
+        for (let attempt = 1; attempt <= 10 && !node.info; attempt++) {
+          try {
+            node.info = await node.fetchInfo();
+            console.log(`[lavalink] Info uzlu "${node.id}" načteno (pokus ${attempt}).`);
+          } catch {
+            await new Promise((resolve) => setTimeout(resolve, 3_000));
+          }
+        }
+        if (!node.info) console.error(`[lavalink] Info uzlu "${node.id}" se nepodařilo načíst.`);
+      })();
+    }
+  });
   manager.nodeManager.on("disconnect", (node, reason) =>
     console.warn(`[lavalink] Uzel "${node.id}" odpojen:`, reason),
   );

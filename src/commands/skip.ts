@@ -32,15 +32,19 @@ export default {
     const skippedTitle = escapeMarkdown(truncate(current?.info.title ?? "Neznámá skladba", 80));
     const requestedCount = interaction.options.getInteger("pocet") ?? 1;
 
-    if (player.queue.tracks.length === 0) {
+    // Přeskočit aktuální + všechny čekající (nebo víc) = vyprázdnit frontu.
+    if (requestedCount > player.queue.tracks.length) {
       await player.stopPlaying(true, false);
-      await interaction.reply({
-        embeds: [infoEmbed(`⏭️ Přeskočeno: **${skippedTitle}**\nFronta je prázdná.`)],
-      });
+      const text =
+        requestedCount > 1
+          ? `⏭️ Přeskočeno vše, co bylo ve frontě.\nFronta je prázdná.`
+          : `⏭️ Přeskočeno: **${skippedTitle}**\nFronta je prázdná.`;
+      await interaction.reply({ embeds: [infoEmbed(text)] });
       return;
     }
 
-    const skipCount = Math.min(requestedCount, player.queue.tracks.length);
+    // player.skip(n) přeskočí aktuální skladbu a n-1 čekajících -> hraje n-tá čekající.
+    const skipCount = requestedCount;
     await player.skip(skipCount);
 
     const message =

@@ -1,7 +1,7 @@
 import { MessageFlags, SlashCommandBuilder } from "discord.js";
 import type { Command } from "../types.js";
 import { infoEmbed, successEmbed } from "../utils/embeds.js";
-import { requirePlayer } from "../utils/guards.js";
+import { replyError, requirePlayer } from "../utils/guards.js";
 
 const data = new SlashCommandBuilder()
   .setName("pause")
@@ -13,6 +13,12 @@ export default {
   async execute(interaction) {
     const player = await requirePlayer(interaction);
     if (!player) return;
+
+    // Bez aktuální skladby by pause() rozbil stav přehrávače (pak by /play nespustil přehrávání).
+    if (!player.queue.current) {
+      await replyError(interaction, "Teď nic nehraje.");
+      return;
+    }
 
     if (player.paused) {
       await interaction.reply({

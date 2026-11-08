@@ -4,5 +4,11 @@
  */
 import { loadCommands, registerGuildCommands } from "./loader.js";
 
-const commands = await loadCommands();
-await registerGuildCommands(commands);
+try {
+  const commands = await loadCommands();
+  await registerGuildCommands(commands);
+  process.exit(0);
+} catch (err) {
+  console.error("[deploy] Registrace příkazů selhala:", err);
+  process.exit(1);
+}

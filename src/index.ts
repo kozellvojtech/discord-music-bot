@@ -37,6 +37,7 @@ client.once(Events.ClientReady, async (ready) => {
 
 client.on(Events.Error, (err) => console.error("[bot] Chyba klienta:", err));
 process.on("unhandledRejection", (reason) => console.error("[bot] Nezachycená chyba (promise):", reason));
+process.on("uncaughtException", (err) => console.error("[bot] Nezachycená výjimka:", err));
 
 let shuttingDown = false;
 async function shutdown(signal: string): Promise<void> {

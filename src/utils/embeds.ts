@@ -20,7 +20,9 @@ function requesterOf(track: Track | UnresolvedTrack): Requester | null {
 
 function trackLink(track: Track | UnresolvedTrack): string {
   const title = escapeMarkdown(truncate(track.info.title ?? "Neznámá skladba", 80));
-  return track.info.uri ? `[${title}](${track.info.uri})` : title;
+  // Závorky v URL by předčasně ukončily Markdown odkaz.
+  const url = track.info.uri?.replace(/\(/g, "%28").replace(/\)/g, "%29");
+  return url ? `[${title}](${url})` : title;
 }
 
 export function errorEmbed(message: string): EmbedBuilder {
