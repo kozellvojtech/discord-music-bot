@@ -206,6 +206,23 @@ Nový překlad a restart po změně zdrojového kódu bota:
 docker compose up -d --build
 ```
 
+### Trvalý provoz na CasaOS (bez terminálu)
+
+CasaOS neumí sestavit image z kódu, proto je GitHub Actions při každém pushi do `main` sestaví sám
+(pro x86 i ARM64) a nahraje do veřejného registru `ghcr.io/kozellvojtech/`. Image neobsahují žádná hesla.
+
+1. Vezmi soubor `docker-compose.casaos.yml` a nahraď všechna `ZMEN_ME…` svými hodnotami ze `.env`
+   (`…HESLO_1` = `LAVALINK_PASSWORD` na obou místech, `…HESLO_2` = `YT_CIPHER_TOKEN` na obou místech).
+   ID serverů a aplikace dej do uvozovek.
+2. V CasaOS klikni na **+** → **Install a customized app** → **Import**, vlož celý obsah a potvrď **Install**.
+3. První start trvá 1–2 minuty (stahují se image a pluginy). Stav uvidíš v CasaOS u aplikace → **Logs**
+   kontejneru `discord-music-bot`: hledej „Přihlášen jako…“ a „Uzel "main" připojen“.
+4. **Bota vypni na všech ostatních počítačích** (`docker compose down`). Se stejným tokenem smí běžet jen jedna kopie.
+
+Aktualizace jsou automatické: kontejnery mají label `com.centurylinklabs.watchtower.enable=true`, takže je
+Watchtower na serveru (spuštěný s `--label-enable`) sám stáhne, když na GitHub přijde nová verze.
+Změna verze YouTube pluginu na CasaOS = v aplikaci → **Settings** přepiš `YT_PLUGIN_VERSION` a ulož.
+
 ---
 
 ## 8. Aktualizace YouTube pluginu
