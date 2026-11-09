@@ -4,12 +4,13 @@
 #
 # Síť: všechny kontejnery jsou ve vlastní síti 'discord-music-bot' a hledají se podle container_name.
 # Bezpečnost: žádná služba nemá "ports:" -> Lavalink ani yt-cipher nejsou dostupné zvenku.
-# Aktualizace: Watchtower na serveru (spuštěný s --label-enable) aktualizuje kontejnery s labelem níže.
+# Aktualizace: služba watchtower níže každých 5 minut stáhne novou verzi z GitHubu.
 name: discord-music-bot
 
 services:
   bot:
     image: ghcr.io/kozellvojtech/discord-music-bot:latest
+    pull_policy: always
     container_name: discord-music-bot
     restart: unless-stopped
     networks:
@@ -29,12 +30,11 @@ services:
     depends_on:
       lavalink:
         condition: service_healthy
-    labels:
-      com.centurylinklabs.watchtower.enable: "true"
     stop_grace_period: 15s
 
   lavalink:
     image: ghcr.io/kozellvojtech/discord-music-bot-lavalink:latest
+    pull_policy: always
     container_name: discord-music-bot-lavalink
     restart: unless-stopped
     networks:
@@ -56,8 +56,6 @@ services:
       JAVA_TOOL_OPTIONS: -Xmx1G
     depends_on:
       - yt-cipher
-    labels:
-      com.centurylinklabs.watchtower.enable: "true"
 
   yt-cipher:
     image: ghcr.io/kikkia/yt-cipher:master
@@ -68,9 +66,17 @@ services:
     environment:
       API_TOKEN: ZMEN_ME_STEJNE_HESLO_2
       OVERRIDE_PLAYER_VARIANT: IAS
-    labels:
-      com.centurylinklabs.watchtower.enable: "true"
 
+  # Vlastní Watchtower: každých 5 minut zkontroluje GitHub a aktualizuje JEN tyto tři kontejnery.
+  watchtower:
+    image: nickfedor/watchtower:1.23.2
+    container_name: discord-music-bot-watchtower
+    restart: unless-stopped
+    networks:
+      - discord-music-bot
+    command: ["--interval", "300", "--cleanup", "discord-music-bot", "discord-music-bot-lavalink", "discord-music-bot-yt-cipher"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
 # Vlastní síť: ve výchozí síti 'bridge' se kontejnery nenajdou podle jména.
 networks:
   discord-music-bot:
