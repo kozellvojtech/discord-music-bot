@@ -1,0 +1,64 @@
+# Varianta pro CasaOS: jen hotové image z GitHub registru, nic se nesestavuje a nic se nenahrává na disk.
+# Instalace: CasaOS -> "+" -> Install a customized app -> Import -> vlož tento soubor
+# s doplněnými hodnotami ZMEN_ME (viz README, kapitola "CasaOS").
+#
+# Bezpečnost: žádná služba nemá "ports:" -> Lavalink ani yt-cipher nejsou dostupné zvenku.
+# Aktualizace: Watchtower na serveru (spuštěný s --label-enable) aktualizuje kontejnery s labelem níže.
+name: discord-music-bot
+
+services:
+  bot:
+    image: ghcr.io/kozellvojtech/discord-music-bot:latest
+    container_name: discord-music-bot
+    restart: unless-stopped
+    environment:
+      DISCORD_TOKEN: ZMEN_ME
+      DISCORD_CLIENT_ID: ZMEN_ME
+      # Víc serverů odděl čárkou bez mezer.
+      DISCORD_GUILD_ID: ZMEN_ME
+      LAVALINK_HOST: lavalink
+      LAVALINK_PORT: "2333"
+      LAVALINK_PASSWORD: ZMEN_ME_STEJNE_HESLO_1
+      DEFAULT_VOLUME: "80"
+      IDLE_TIMEOUT_SECONDS: "180"
+      EMPTY_CHANNEL_TIMEOUT_SECONDS: "60"
+      MAX_QUEUE_SIZE: "500"
+    depends_on:
+      lavalink:
+        condition: service_healthy
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+    stop_grace_period: 15s
+
+  lavalink:
+    image: ghcr.io/kozellvojtech/discord-music-bot-lavalink:latest
+    container_name: discord-music-bot-lavalink
+    restart: unless-stopped
+    environment:
+      LAVALINK_PASSWORD: ZMEN_ME_STEJNE_HESLO_1
+      YT_PLUGIN_VERSION: 2be8e542d3f6f178e048dca565892684c2e40177
+      YT_PLUGIN_SNAPSHOT: "true"
+      LAVASRC_VERSION: 4.8.3
+      YT_CIPHER_TOKEN: ZMEN_ME_STEJNE_HESLO_2
+      YT_OAUTH_ENABLED: "false"
+      YT_OAUTH_REFRESH_TOKEN: ""
+      SPOTIFY_CLIENT_ID: ZMEN_ME
+      SPOTIFY_CLIENT_SECRET: ZMEN_ME
+      SPOTIFY_SP_DC: ""
+      SPOTIFY_PREFER_PARTNER_API: "false"
+      SPOTIFY_COUNTRY: CZ
+      JAVA_TOOL_OPTIONS: -Xmx1G
+    depends_on:
+      - yt-cipher
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+
+  yt-cipher:
+    image: ghcr.io/kikkia/yt-cipher:master
+    container_name: discord-music-bot-yt-cipher
+    restart: unless-stopped
+    environment:
+      API_TOKEN: ZMEN_ME_STEJNE_HESLO_2
+      OVERRIDE_PLAYER_VARIANT: IAS
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"

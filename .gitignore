@@ -20,3 +20,6 @@ lavalink/logs/
 Thumbs.db
 .vscode/
 *.log
+
+# Vyplněný compose pro CasaOS (obsahuje hesla)
+docker-compose.casaos.local.yml
