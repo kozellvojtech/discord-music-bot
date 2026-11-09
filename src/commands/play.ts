@@ -36,6 +36,11 @@ export default {
 
     await interaction.deferReply();
 
+    if (!interaction.client.lavalink.useable) {
+      await replyError(interaction, "Hudební server (Lavalink) teď není připojený. Zkus to za minutu znovu.");
+      return;
+    }
+
     const guildId = voice.channel.guild.id;
     const existingPlayer = interaction.client.lavalink.getPlayer(guildId);
     if (existingPlayer?.voiceChannelId && existingPlayer.voiceChannelId !== voice.channel.id) {

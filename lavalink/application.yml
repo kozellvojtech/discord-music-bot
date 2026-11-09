@@ -80,7 +80,7 @@ plugins:
         playlistLoading: false
     # Vzdálené dešifrování podpisů YouTube (kontejner yt-cipher ve stejné Docker síti).
     remoteCipher:
-      url: "http://yt-cipher:8001/"
+      url: "${YT_CIPHER_URL:http://yt-cipher:8001/}"
       password: "${YT_CIPHER_TOKEN}"
       userAgent: "private-discord-music-bot"
     # Přihlášení vedlejším Google účtem (volitelné, viz README -> "YouTube OAuth").

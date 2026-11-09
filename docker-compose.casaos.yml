@@ -2,6 +2,7 @@
 # Instalace: CasaOS -> "+" -> Install a customized app -> Import -> vlož tento soubor
 # s doplněnými hodnotami ZMEN_ME (viz README, kapitola "CasaOS").
 #
+# Síť: všechny kontejnery jsou ve vlastní síti 'discord-music-bot' a hledají se podle container_name.
 # Bezpečnost: žádná služba nemá "ports:" -> Lavalink ani yt-cipher nejsou dostupné zvenku.
 # Aktualizace: Watchtower na serveru (spuštěný s --label-enable) aktualizuje kontejnery s labelem níže.
 name: discord-music-bot
@@ -11,12 +12,14 @@ services:
     image: ghcr.io/kozellvojtech/discord-music-bot:latest
     container_name: discord-music-bot
     restart: unless-stopped
+    networks:
+      - discord-music-bot
     environment:
       DISCORD_TOKEN: ZMEN_ME
       DISCORD_CLIENT_ID: ZMEN_ME
       # Víc serverů odděl čárkou bez mezer.
       DISCORD_GUILD_ID: ZMEN_ME
-      LAVALINK_HOST: lavalink
+      LAVALINK_HOST: discord-music-bot-lavalink
       LAVALINK_PORT: "2333"
       LAVALINK_PASSWORD: ZMEN_ME_STEJNE_HESLO_1
       DEFAULT_VOLUME: "80"
@@ -34,12 +37,15 @@ services:
     image: ghcr.io/kozellvojtech/discord-music-bot-lavalink:latest
     container_name: discord-music-bot-lavalink
     restart: unless-stopped
+    networks:
+      - discord-music-bot
     environment:
       LAVALINK_PASSWORD: ZMEN_ME_STEJNE_HESLO_1
       YT_PLUGIN_VERSION: 2be8e542d3f6f178e048dca565892684c2e40177
       YT_PLUGIN_SNAPSHOT: "true"
       LAVASRC_VERSION: 4.8.3
       YT_CIPHER_TOKEN: ZMEN_ME_STEJNE_HESLO_2
+      YT_CIPHER_URL: http://discord-music-bot-yt-cipher:8001/
       YT_OAUTH_ENABLED: "false"
       YT_OAUTH_REFRESH_TOKEN: ""
       SPOTIFY_CLIENT_ID: ZMEN_ME
@@ -57,8 +63,16 @@ services:
     image: ghcr.io/kikkia/yt-cipher:master
     container_name: discord-music-bot-yt-cipher
     restart: unless-stopped
+    networks:
+      - discord-music-bot
     environment:
       API_TOKEN: ZMEN_ME_STEJNE_HESLO_2
       OVERRIDE_PLAYER_VARIANT: IAS
     labels:
       com.centurylinklabs.watchtower.enable: "true"
+
+# Vlastní síť: ve výchozí síti 'bridge' se kontejnery nenajdou podle jména.
+networks:
+  discord-music-bot:
+    name: discord-music-bot
+    driver: bridge

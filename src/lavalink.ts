@@ -93,9 +93,15 @@ export function createLavalink(client: Client): LavalinkManager {
   manager.nodeManager.on("reconnecting", (node) =>
     console.log(`[lavalink] Znovu se připojuji k uzlu "${node.id}"...`),
   );
-  manager.nodeManager.on("error", (node, error) =>
-    console.error(`[lavalink] Chyba uzlu "${node.id}":`, error?.message ?? error),
-  );
+  manager.nodeManager.on("error", (node, error) => {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`[lavalink] Chyba uzlu "${node.id}":`, message);
+    // Knihovna po vyčerpání pokusů uzel zruší a už se nepřipojí -> ukonči proces, Docker bota restartuje.
+    if (message.startsWith("Unable to connect after")) {
+      console.error("[lavalink] Lavalink je nedostupný, restartuji bota.");
+      setTimeout(() => process.exit(1), 1_000);
+    }
+  });
 
   return manager;
 }
