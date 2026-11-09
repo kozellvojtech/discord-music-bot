@@ -27,6 +27,8 @@ Discord <-> bot (Node.js) <-> Lavalink (+ youtube-plugin, LavaSrc) <-> yt-cipher
 - `/loop` – Přepíná režim opakování mezi vypnutým stavem, opakováním jedné skladby a opakováním celé fronty.
 - `/shuffle` – Náhodně promíchá pořadí zbývajících skladeb ve frontě.
 - `/leave` – Odpojí bota z hlasového kanálu a vymaže frontu přehrávače.
+- `/remove` – Odebere skladbu z fronty podle pozice z `/queue` (volitelně rozsah „do“).
+- `/autoplay` – Když dojde fronta, bot sám pouští podobné skladby (YouTube Mix). Bez volby se přepne zapnuto/vypnuto.
 
 ---
 

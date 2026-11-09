@@ -1,5 +1,6 @@
 import type { Client, User } from "discord.js";
 import { LavalinkManager } from "lavalink-client";
+import { autoPlayFunction } from "./autoplay.js";
 import { config } from "./config.js";
 import type { Requester } from "./types.js";
 
@@ -57,10 +58,16 @@ export function createLavalink(client: Client): LavalinkManager {
         // Když bota někdo vyhodí z kanálu, přehrávač zruš (žádné "duchy").
         destroyPlayer: true,
       },
+      // /autoplay: při prázdné frontě přidá podobné skladby (src/autoplay.ts).
+      onEmptyQueue: {
+        autoPlayFunction,
+      },
+      minAutoPlayMs: 3_000,
       // Odchod při prázdné frontě řeší src/events/autoLeave.ts (kvůli zprávě do kanálu).
     },
     queueOptions: {
-      maxPreviousTracks: 10,
+      // Delší historie = autoplay méně opakuje.
+      maxPreviousTracks: 25,
     },
   });
 

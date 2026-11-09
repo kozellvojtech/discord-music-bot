@@ -4,6 +4,7 @@
  */
 import { EmbedBuilder } from "discord.js";
 import type { Player, Track, UnresolvedTrack } from "lavalink-client";
+import { isAutoplayEnabled } from "../autoplay.js";
 import type { Requester } from "../types.js";
 import { escapeMarkdown, formatDuration, progressBar, truncate } from "./format.js";
 
@@ -56,6 +57,7 @@ export function nowPlayingEmbed(player: Player, track: Track): EmbedBuilder {
       { name: "Ve frontě", value: `${player.queue.tracks.length}`, inline: true },
       { name: "Opakování", value: repeatLabel(player.repeatMode), inline: true },
     );
+  if (isAutoplayEnabled(player)) embed.addFields({ name: "Autoplay", value: "♾️ Zapnuto", inline: true });
   if (track.info.artworkUrl) embed.setThumbnail(track.info.artworkUrl);
   if (requester) embed.setFooter({ text: `Přidal(a): ${requester.username}`, iconURL: requester.avatarUrl ?? undefined });
   return embed;

@@ -1,4 +1,6 @@
 import { SlashCommandBuilder } from "discord.js";
+import type { Track } from "lavalink-client";
+import { addRelatedTracks, isAutoplayEnabled } from "../autoplay.js";
 import type { Command } from "../types.js";
 import { infoEmbed, successEmbed } from "../utils/embeds.js";
 import { escapeMarkdown, truncate } from "../utils/format.js";
@@ -31,6 +33,23 @@ export default {
 
     const skippedTitle = escapeMarkdown(truncate(current?.info.title ?? "Neznámá skladba", 80));
     const requestedCount = interaction.options.getInteger("pocet") ?? 1;
+
+    // S autoplay: místo konce rovnou dohledej podobné skladby a přeskoč na ně.
+    if (requestedCount > player.queue.tracks.length && isAutoplayEnabled(player) && current) {
+      await interaction.deferReply();
+      if (player.queue.tracks.length > 0) await player.queue.splice(0, player.queue.tracks.length);
+      const added = await addRelatedTracks(player, current as Track).catch(() => 0);
+      if (added > 0) {
+        await player.skip(1);
+        await interaction.editReply({ embeds: [successEmbed(`⏭️ Přeskočeno: **${skippedTitle}**. ♾️ Autoplay pokračuje.`)] });
+      } else {
+        await player.stopPlaying(true, false);
+        await interaction.editReply({
+          embeds: [infoEmbed(`⏭️ Přeskočeno: **${skippedTitle}**\nAutoplay nenašel nic podobného, fronta je prázdná.`)],
+        });
+      }
+      return;
+    }
 
     // Přeskočit aktuální + všechny čekající (nebo víc) = vyprázdnit frontu.
     if (requestedCount > player.queue.tracks.length) {
