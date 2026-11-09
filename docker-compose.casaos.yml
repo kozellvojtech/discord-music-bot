@@ -4,7 +4,7 @@
 #
 # Síť: všechny kontejnery jsou ve vlastní síti 'discord-music-bot' a hledají se podle container_name.
 # Bezpečnost: žádná služba nemá "ports:" -> Lavalink ani yt-cipher nejsou dostupné zvenku.
-# Aktualizace: služba watchtower níže každých 5 minut stáhne novou verzi z GitHubu.
+# Aktualizace: přeinstalace aplikace v CasaOS stáhne nejnovější verzi z GitHubu (pull_policy: always).
 name: discord-music-bot
 
 services:
@@ -67,16 +67,6 @@ services:
       API_TOKEN: ZMEN_ME_STEJNE_HESLO_2
       OVERRIDE_PLAYER_VARIANT: IAS
 
-  # Vlastní Watchtower: každých 5 minut zkontroluje GitHub a aktualizuje JEN tyto tři kontejnery.
-  watchtower:
-    image: nickfedor/watchtower:1.23.2
-    container_name: discord-music-bot-watchtower
-    restart: unless-stopped
-    networks:
-      - discord-music-bot
-    command: ["--interval", "300", "--cleanup", "discord-music-bot", "discord-music-bot-lavalink", "discord-music-bot-yt-cipher"]
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
 # Vlastní síť: ve výchozí síti 'bridge' se kontejnery nenajdou podle jména.
 networks:
   discord-music-bot:

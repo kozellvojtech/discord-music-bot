@@ -221,9 +221,8 @@ CasaOS neumí sestavit image z kódu, proto je GitHub Actions při každém push
    kontejneru `discord-music-bot`: hledej „Přihlášen jako…“ a „Uzel "main" připojen“.
 4. **Bota vypni na všech ostatních počítačích** (`docker compose down`). Se stejným tokenem smí běžet jen jedna kopie.
 
-Aktualizace jsou automatické: součástí aplikace je vlastní Watchtower (`discord-music-bot-watchtower`), který
-každých 5 minut zkontroluje GitHub a aktualizuje jen kontejnery bota. Pozor: **Restart** v CasaOS novou verzi
-nestáhne, jen znovu spustí tu stávající. Okamžitou aktualizaci vynutíš přeinstalací (`pull_policy: always`).
+Aktualizace: po nové verzi na GitHubu aplikaci v CasaOS přeinstaluj (Uninstall + Import), díky `pull_policy: always`
+se stáhne nejnovější image. Pozor: **Restart** v CasaOS novou verzi nestáhne, jen znovu spustí tu stávající.
 Změna verze YouTube pluginu na CasaOS = v aplikaci → **Settings** přepiš `YT_PLUGIN_VERSION` a ulož.
 
 ---
